@@ -1,5 +1,5 @@
 {
-  "name": "@aperture/react-sdk",
+  "name": "@aperturetech/react-sdk",
   "version": "1.0.0",
   "description": "Aperture Payment React SDK - Unified payment integration for React apps",
   "main": "dist/index.js",

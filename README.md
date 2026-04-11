@@ -1,11 +1,11 @@
-# @anthropic/aperture-react-sdk
+# @aperturetech/react-sdk
 
 React SDK for Aperture Payment — unified payment integration. One SDK, all providers (Stripe, Razorpay, CCAvenue).
 
 ## Install
 
 ```bash
-npm install @anthropic/aperture-react-sdk
+npm install @aperturetech/react-sdk
 ```
 
 ## Quick Start
@@ -13,7 +13,7 @@ npm install @anthropic/aperture-react-sdk
 ### 1. Wrap your app with `<ApertureProvider>`
 
 ```tsx
-import { ApertureProvider } from '@anthropic/aperture-react-sdk';
+import { ApertureProvider } from '@aperturetech/react-sdk';
 
 function App() {
   return (
@@ -30,7 +30,7 @@ function App() {
 ### 2. Use `usePayment` hook in your checkout
 
 ```tsx
-import { usePayment, CardElement } from '@anthropic/aperture-react-sdk';
+import { usePayment, CardElement } from '@aperturetech/react-sdk';
 
 function CheckoutPage() {
   const { status, error, result, createPayment, confirmPayment } = usePayment('#aperture-card-element');
