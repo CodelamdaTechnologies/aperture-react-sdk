@@ -35,8 +35,9 @@ export async function openPayPal(
   const clientId = payload.clientId as string;
   if (!clientId) throw new Error('Missing PayPal client ID from backend');
 
-  // Load PayPal SDK with merchant's client ID
-  await loadScript(`${PROVIDER_SCRIPTS.PAYPAL}?client-id=${clientId}&currency=${request.currency || 'USD'}`);
+  // Load PayPal SDK with merchant's client ID. `intent=capture` matches the backend
+  // (which creates orders with intent=CAPTURE) so the button reads "Pay Now".
+  await loadScript(`${PROVIDER_SCRIPTS.PAYPAL}?client-id=${clientId}&currency=${request.currency || 'USD'}&intent=capture`);
 
   if (!window.paypal) throw new Error('PayPal SDK failed to load');
 
