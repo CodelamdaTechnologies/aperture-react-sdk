@@ -1,11 +1,13 @@
 {
   "name": "@aperturetech/react-sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Aperture Payment React SDK - Unified payment integration for React apps",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "files": ["dist/"],
+  "files": [
+    "dist/"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/CodelamdaTechnologies/aperture-react-sdk.git"
@@ -36,6 +38,14 @@
     "tsup": "^8.5.0",
     "typescript": "^5.8.3"
   },
-  "keywords": ["payment", "react", "stripe", "razorpay", "ccavenue", "sdk", "aperture"],
+  "keywords": [
+    "payment",
+    "react",
+    "stripe",
+    "razorpay",
+    "ccavenue",
+    "sdk",
+    "aperture"
+  ],
   "license": "MIT"
 }
