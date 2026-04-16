@@ -16,7 +16,7 @@ declare global {
 interface AcceptSecureData {
   authData: {
     clientKey: string;
-    apiLoginID: string;
+    apiLoginID: string; // Accept.js expects this exact spelling
   };
   cardData: {
     cardNumber: string;
@@ -62,10 +62,11 @@ export async function initAuthorizeNet(
   if (!window.Accept) throw new Error('Authorize.Net Accept.js failed to load');
 
   const clientKey = payload.clientKey as string;
-  const apiLoginID = payload.apiLoginID as string;
+  // Backend sends apiLoginId (camelCase); tolerate apiLoginID if ever sent.
+  const apiLoginId = (payload.apiLoginId ?? payload.apiLoginID) as string;
 
   if (!clientKey) throw new Error('Missing Authorize.Net client key');
-  if (!apiLoginID) throw new Error('Missing Authorize.Net API login ID');
+  if (!apiLoginId) throw new Error('Missing Authorize.Net API login ID');
 
   const submitPayment = async (cardData: {
     cardNumber: string;
@@ -75,7 +76,7 @@ export async function initAuthorizeNet(
   }): Promise<PaymentResult> => {
     return new Promise<PaymentResult>((resolve) => {
       const secureData: AcceptSecureData = {
-        authData: { clientKey, apiLoginID },
+        authData: { clientKey, apiLoginID: apiLoginId },
         cardData,
       };
 
