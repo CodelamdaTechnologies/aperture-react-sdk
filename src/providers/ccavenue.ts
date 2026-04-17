@@ -9,10 +9,11 @@ export function redirectCCAvenue(
   form.action = payload.paymentUrl as string;
   form.style.display = 'none';
 
+  // CCAvenue form requires exactly two fields: encRequest + access_code.
+  // merchant_id is inside the encrypted payload — do NOT send it as a separate field.
   const fields: Record<string, string | undefined> = {
     encRequest: payload.encRequest as string,
     access_code: payload.accessCode as string,
-    merchant_id: payload.merchantId as string,
   };
 
   Object.entries(fields).forEach(([name, value]) => {
