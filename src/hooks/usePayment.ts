@@ -15,8 +15,17 @@ interface UsePaymentReturn {
   result: PaymentResult | null;
   /** Start a payment. For Stripe with container, mounts card input and waits for confirmPayment(). */
   createPayment: (request: PaymentRequest) => Promise<PaymentResult | void>;
-  /** Confirm Stripe card payment after user fills the card form. */
-  confirmPayment: () => Promise<PaymentResult>;
+  /**
+   * Confirm a pending card payment.
+   * - Stripe: call with no arguments; the mounted card Element is read internally.
+   * - Authorize.Net: pass the card fields collected by your UI.
+   */
+  confirmPayment: (cardData?: {
+    cardNumber: string;
+    month: string;
+    year: string;
+    cardCode: string;
+  }) => Promise<PaymentResult>;
   /** Check current payment status from backend. */
   checkStatus: (orderId: string) => Promise<void>;
   /** Reset state back to idle. */
@@ -164,7 +173,14 @@ export function usePayment(stripeContainer?: string | HTMLElement): UsePaymentRe
 
     // Stripe confirmation
     const handle = stripeHandleRef.current;
-    if (!handle) throw new Error('No payment to confirm. Call createPayment() first.');
+    if (!handle) {
+      if (authNetHandleRef.current) {
+        throw new Error(
+          'Authorize.Net confirmation requires card data. Call confirmPayment({ cardNumber, month, year, cardCode }).',
+        );
+      }
+      throw new Error('No payment to confirm. Call createPayment() first.');
+    }
 
     setStatus('PROCESSING');
     setError(null);
