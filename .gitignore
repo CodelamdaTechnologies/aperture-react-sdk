@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.tgz
+
+.auto-claude/
+.auto-claude-*
+.claude_settings.json
+*.log
+COMPLETION_SUMMARY.md
+PROGRESS_SUMMARY.md
+*_IMPLEMENTATION_GUIDE.md
+IMPLEMENTATION_GUIDE.md
