@@ -8,12 +8,30 @@ declare global {
   }
 }
 
+interface StripePaymentIntent {
+  id: string;
+  status: string;
+  payment_method: string;
+}
+
+interface StripeError { message: string; code: string }
+
 interface StripeInstance {
   elements: () => StripeElements;
   confirmCardPayment: (
     clientSecret: string,
     data?: { payment_method?: { card: StripeCardElement } | string; return_url?: string }
-  ) => Promise<{ error?: { message: string; code: string }; paymentIntent?: { id: string; status: string; payment_method: string } }>;
+  ) => Promise<{ error?: StripeError; paymentIntent?: StripePaymentIntent }>;
+  /**
+   * Pops the 3DS challenge iframe for a PaymentIntent that came back with
+   * status=requires_action. Resolves once the user completes (or fails)
+   * the bank's authentication step. After this call the PaymentIntent's
+   * status will be either succeeded, requires_payment_method (failed),
+   * or processing.
+   */
+  handleCardAction: (
+    clientSecret: string,
+  ) => Promise<{ error?: StripeError; paymentIntent?: StripePaymentIntent }>;
 }
 
 interface StripeElements {
@@ -68,6 +86,19 @@ export async function initStripe(
   if (!container) throw new Error(`Container not found: ${containerEl}`);
   cardElement.mount(container as HTMLElement);
 
+  const finalizeSuccess = async (intent: StripePaymentIntent): Promise<PaymentResult> => {
+    await api.confirmPayment(orderId, {
+      paymentIntentId: intent.id,
+      paymentMethodId: intent.payment_method,
+    });
+    return {
+      provider: 'STRIPE',
+      orderId,
+      status: 'SUCCEEDED',
+      providerReferenceId: intent.id,
+    };
+  };
+
   const confirmPayment = async (): Promise<PaymentResult> => {
     const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
       payment_method: { card: cardElement },
@@ -78,15 +109,45 @@ export async function initStripe(
     }
 
     if (paymentIntent?.status === 'succeeded') {
-      await api.confirmPayment(orderId, {
-        paymentIntentId: paymentIntent.id,
-        paymentMethodId: paymentIntent.payment_method,
-      });
-      return { provider: 'STRIPE', orderId, status: 'SUCCEEDED', providerReferenceId: paymentIntent.id };
+      return finalizeSuccess(paymentIntent);
     }
 
+    // 3DS — Stripe needs us to pop the bank's challenge iframe. handleCardAction
+    // blocks on the user's interaction and resolves with the updated intent
+    // status. We then finalise based on what the bank decided.
     if (paymentIntent?.status === 'requires_action') {
-      return { provider: 'STRIPE', orderId, status: 'REQUIRES_ACTION', providerReferenceId: paymentIntent.id };
+      const action = await stripe.handleCardAction(clientSecret);
+      if (action.error) {
+        return {
+          provider: 'STRIPE',
+          orderId,
+          status: 'FAILED',
+          error: action.error.message,
+          errorCode: action.error.code,
+        };
+      }
+      const next = action.paymentIntent;
+      if (next?.status === 'succeeded') {
+        return finalizeSuccess(next);
+      }
+      // Bank declined or requires another step we don't recognise. Surface
+      // as FAILED so the caller can show a "try another card" prompt
+      // instead of getting stuck on REQUIRES_ACTION forever.
+      if (next?.status === 'requires_payment_method') {
+        return {
+          provider: 'STRIPE',
+          orderId,
+          status: 'FAILED',
+          error: 'Bank declined the 3D Secure authentication. Please try another card.',
+          providerReferenceId: next.id,
+        };
+      }
+      return {
+        provider: 'STRIPE',
+        orderId,
+        status: 'PROCESSING',
+        providerReferenceId: next?.id,
+      };
     }
 
     return { provider: 'STRIPE', orderId, status: 'PROCESSING', providerReferenceId: paymentIntent?.id };
